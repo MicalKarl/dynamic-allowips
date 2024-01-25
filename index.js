@@ -60,7 +60,7 @@ app.get('/addip', (req, res) => {
 });
 
 app.get('/allips', (req, res) => {
-    res.json(ipDataObj.toJSON());
+    res.json(ipDataObj.toTimeJson());
 });
 
 

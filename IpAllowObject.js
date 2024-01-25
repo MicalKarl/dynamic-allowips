@@ -69,6 +69,18 @@ class IpAllowObject {
         };
     }
 
+    toTimeJson(){
+        let nd = {};
+        for (const ip in this.data)
+        {
+            nd[ip] = new Date(this.data[ip] * 1000);
+        }
+        return {
+            port: this.port,
+            data: nd
+        };
+    }
+
     _ipSetAdd(ip)
     {
         this._execCmdAndLog(`sudo ufw allow from ${ip} to any port ${this.port}`);
