@@ -1,4 +1,5 @@
 const { exec } = require('child_process');
+const net = require('net');
 
 class IpAllowObject {
     constructor(port, data = {}) {
@@ -12,10 +13,6 @@ class IpAllowObject {
     }
 
     update(t, force=false) {
-        if(force)
-        {
-            this._execCmdAndLog('ipset create ss_ips hash:ip');
-        }
         let validIps = new Set();
         for (const ip in this.data) {
             if (t >= this.data[ip] * 1000) {
@@ -26,29 +23,32 @@ class IpAllowObject {
             }
         }
 
-        const cmdListIps = 'sudo ipset list ss_ips'
+        const cmdListIps = 'ufw status'
         exec(cmdListIps, (err, stdout, stderr) => {
             let curIpSet = new Set();
             if (!err && !stderr) {
-                let flag = false;
                 stdout.split('\n').forEach((line)=>{
-                    const trimStr = line.trim();
-                    if(flag && trimStr.length > 0)
+                    const items = line.trim().split(/\s+/);
+                    if(items.length == 3 && items[0] == this.port && items[1] == 'ALLOW' && net.isIP(items[2]) !== 0)
                     {
-                        curIpSet.add(trimStr);
-                    }
-                    if(trimStr.startsWith('Members:'))
-                    {
-                        flag = true;
+                        curIpSet.add(items[2]);
                     }
                 });
                 
+                let flag = false;
                 [...validIps].filter(ip => !(curIpSet.has(ip))).forEach((ip)=>{
+                    flag = true;
                     this._ipSetAdd(ip);
                 });
                 [...curIpSet].filter(ip => !(validIps.has(ip))).forEach((ip) => {
+                    flag = true;
                     this._ipSetRemove(ip);
                 })
+
+                if(flag)
+                {
+                    this._execCmdAndLog('ufw reload');
+                }
             } 
             if(err || stderr)
             {
@@ -71,12 +71,12 @@ class IpAllowObject {
 
     _ipSetAdd(ip)
     {
-        this._execCmdAndLog(`sudo ipset add ss_ips ${ip}`);
+        this._execCmdAndLog(`sudo ufw allow from ${ip} to any port ${this.port}`);
     }
 
     _ipSetRemove(ip)
     {
-        this._execCmdAndLog(`sudo ipset del ss_ips ${ip}`);
+        this._execCmdAndLog(`sudo ufw delete allow from ${ip} to any port ${this.port}`);
     }
 
     _execCmdAndLog(cmd)

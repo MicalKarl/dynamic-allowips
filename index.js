@@ -70,6 +70,3 @@ app.listen(PORT, () => {
 });
 
 
-// iptables -A INPUT -p tcp -m set --match-set ss_ips src --dport 3333 -j ACCEPT
-// iptables -A INPUT -p tcp -m set --match-set ss_ips src --dport 3333 -i DOCKER -j ACCEPT 
-// iptables -A INPUT -p tcp --dport 3333 -i DOCKER -j DROP
