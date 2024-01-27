@@ -56,7 +56,7 @@ app.get('/addip', (req, res) => {
     const clientIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
     ipDataObj.add(clientIp);
     updateIp();
-    res.send(`add ip: ${clientIp}`);
+    res.status(204).end();
 });
 
 app.get('/allips', (req, res) => {
