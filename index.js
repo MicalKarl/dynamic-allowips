@@ -52,10 +52,25 @@ const updateTimer = setInterval(()=>{
 }, 5000);
 
 
+function getRealIp(req)
+{
+    return req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+}
+
+
 app.get('/addip', (req, res) => {
-    const clientIp = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+    const clientIp = getRealIp(req);
     ipDataObj.add(clientIp);
     updateIp();
+    res.send(`add ip ${clientIp}`);
+});
+
+app.get('/fastaddip', async (req, res) => {
+    const clientIp = getRealIp(req);
+    ipDataObj.add(clientIp);
+    updateIp();
+    // log anyway
+    console.log(`[fast] try add ip ${clientIp} at ${new Date()}`);
     res.status(204).end();
 });
 
