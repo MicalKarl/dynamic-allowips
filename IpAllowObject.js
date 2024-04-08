@@ -1,5 +1,6 @@
 const { exec } = require('child_process');
 const net = require('net');
+const { toChinaTimeString } = require('./timeUtil');
 
 class IpAllowObject {
     constructor(port, data = {}) {
@@ -66,7 +67,7 @@ class IpAllowObject {
         let nd = {};
         for (const ip in this.data)
         {
-            nd[ip] = new Date(this.data[ip] * 1000);
+            nd[ip] = toChinaTimeString(new Date(this.data[ip] * 1000));
         }
         return {
             port: this.port,
