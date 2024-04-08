@@ -23,7 +23,7 @@ class IpAllowObject {
             }
         }
 
-        const cmdListIps = 'ufw status'
+        const cmdListIps = 'ufw status';
         exec(cmdListIps, (err, stdout, stderr) => {
             let curIpSet = new Set();
             if (!err && !stderr) {
@@ -35,19 +35,17 @@ class IpAllowObject {
                     }
                 });
                 
-                let flag = false;
+                let cmd = 'true';
                 [...validIps].filter(ip => !(curIpSet.has(ip))).forEach((ip)=>{
-                    flag = true;
-                    this._ipSetAdd(ip);
+                    cmd += ' && ' + this.formAddIp(ip);
                 });
                 [...curIpSet].filter(ip => !(validIps.has(ip))).forEach((ip) => {
-                    flag = true;
-                    this._ipSetRemove(ip);
+                    cmd += ' && ' + this.formRemoveIp(ip);
                 })
 
-                if(flag)
+                if(cmd != 'true' || force)
                 {
-                    this._execCmdAndLog('ufw reload');
+                    this._execCmdAndLog(`${cmd} && ufw reload`);
                 }
             } 
             if(err || stderr)
@@ -55,11 +53,6 @@ class IpAllowObject {
                 console.error(`list ip cmd <${cmdListIps}> err: ${err} - ${stderr}`);
             }
         })
-
-        if(force)
-        {
-            this._execCmdAndLog('ufw reload');
-        }
     }
 
     toJSON() {
@@ -81,14 +74,14 @@ class IpAllowObject {
         };
     }
 
-    _ipSetAdd(ip)
+    formAddIp(ip)
     {
-        this._execCmdAndLog(`sudo ufw allow from ${ip} to any port ${this.port}`);
+        return `ufw allow from ${ip} to any port ${this.port}`;
     }
 
-    _ipSetRemove(ip)
+    formRemoveIp(ip)
     {
-        this._execCmdAndLog(`sudo ufw delete allow from ${ip} to any port ${this.port}`);
+        return `ufw delete allow from ${ip} to any port ${this.port}`;
     }
 
     _execCmdAndLog(cmd)
