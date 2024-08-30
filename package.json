@@ -8,7 +8,9 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.14",
+    "smtp-server": "^3.13.4"
   },
   "description": ""
 }

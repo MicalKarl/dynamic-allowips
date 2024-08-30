@@ -1,2 +1,4 @@
 *-ipobj.json
 node_modules
+subcfg.json
+.emailAuth.json
