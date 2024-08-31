@@ -79,6 +79,7 @@ const subCfgJson = require("./subcfg.json")
 const { getSSSubscription } = require("./sub");
 const { execOnce } = require('./shellBackend');
 const { renewSS } = require('./cfgRenew');
+const { toChinaTimeString } = require('./timeUtil');
 
 app.get('/sub/:apiKey', async (req, res) => {
     const key = req.params.apiKey
@@ -109,16 +110,27 @@ function updateSSCfg() {
         let s = (stdout || '').toString().trim()
         if (s.length > 0) {
             renewSS(subCfgJson.sscfgs[0], s, () => {
-                execOnce('systemctl restart snap.shadowsocks-rust.ssserver-daemon.service')
+                execOnce(subCfgJson.ssRestartCmd)
             })
         }
     });
 }
 
+const IntervalUpdateSSCfg = 30 * 1000;
 setInterval(() => {
-    updateSSCfg()
-}, 3600 * 1000 * subCfgJson.interval);
-updateSSCfg()
+    let interval = 3600 * 1000 * subCfgJson.interval
+    fs.stat(subCfgJson.sscfgs[0], (err, data) => {
+        if (err) {
+            return
+        }
+
+        let leftTimeMs = Date.now() - data.mtimeMs;
+        if (leftTimeMs > interval) {
+            updateSSCfg()
+            console.log('update ss cfg at', toChinaTimeString(new Date()))
+        }
+    })
+}, IntervalUpdateSSCfg);
 
 // const {sendEmail} = require('./emailUtil')
 

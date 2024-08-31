@@ -8,5 +8,6 @@
         "xxx@abc.com"
     ],
     "apiKey": "lMugb6m7tLRh4twK3qMLoA==",
-    "ssBlake3Cmd": "sing-box generate rand 16 --base64"
+    "ssBlake3Cmd": "sing-box generate rand 16 --base64",
+    "ssRestartCmd": "systemctl restart snap.shadowsocks-rust.ssserver-daemon.service"
 }
