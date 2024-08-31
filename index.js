@@ -76,7 +76,7 @@ app.get('/allips', (req, res) => {
 });
 
 const subCfgJson = require("./subcfg.json")
-const { getSSSubscription } = require("./sub");
+const { getSSSubscription, revSSClashSubscription } = require("./sub");
 const { execOnce } = require('./shellBackend');
 const { renewSS } = require('./cfgRenew');
 const { toChinaTimeString } = require('./timeUtil');
@@ -85,6 +85,10 @@ app.get('/sub/:apiKey', async (req, res) => {
     const key = req.params.apiKey
     if (key == undefined || key != subCfgJson.apiKey) {
         return res.status(403)
+    }
+
+    if (req.query.type == 'clash') {
+        return revSSClashSubscription(res, subCfgJson.server, subCfgJson.sscfgs[0], subCfgJson.ssClashTempPath)
     }
 
     let ssLinks = []
@@ -131,12 +135,6 @@ setInterval(() => {
         }
     })
 }, IntervalUpdateSSCfg);
-
-// const {sendEmail} = require('./emailUtil')
-
-// app.get('/email', (req, res) => {
-//     sendEmail(subCfgJson.server, res, subCfgJson.emails[0], "test", "test")    
-// })
 
 const PORT = 2233;
 app.listen(PORT, () => {

@@ -1,4 +1,5 @@
 const fs = require('fs')
+const yaml = require('js-yaml')
 
 function generateSSLink(method, password, server, port) {
     const config = `${method}:${password}@${server}:${port}`;
@@ -16,6 +17,29 @@ function getSSSubscription(subServer, cfgPath) {
     }
 }
 
+function revSSClashSubscription(res, server, cfgPath, clashTempPath) {
+    try {
+        fs.readFile(cfgPath, (err, data) => {
+            if (err) {
+                console.error(err)
+                res.status(500).end()
+                return
+            }
+            let jsonData = JSON.parse(data)
+            let clashJsonData = yaml.load(fs.readFileSync(clashTempPath, 'utf-8'))
+            clashJsonData['proxies'][0].password = jsonData.password
+            clashJsonData['proxies'][0].port = jsonData.server_port
+            clashJsonData['proxies'][0].cipher = jsonData.method
+            clashJsonData['proxies'][0].server = server
+            res.send(yaml.dump(clashJsonData))
+        })
+    } catch (err) {
+        console.error(err)
+        res.status(500).end()
+    }
+}
+
 module.exports = {
-    getSSSubscription
+    getSSSubscription,
+    revSSClashSubscription
 }
