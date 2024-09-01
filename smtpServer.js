@@ -18,7 +18,7 @@ const server = new SMTPServer({
     onAuth(auth, session, callback) {
         // 这里可以添加身份验证逻辑
         // 例如，检查用户名和密码
-        if (auth.username === emailCredentials.user && auth.password === emailCredentials.passworld) {
+        if (auth.username === emailCredentials.user && auth.password === emailCredentials.password) {
             callback(null, { user: auth.username });
         } else {
             callback(new Error('Invalid username or password'));

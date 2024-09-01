@@ -1,43 +1,30 @@
-const nodemailer = require('nodemailer');
 const emailCredentials = require('./.emailAuth.json')
+const { exec } = require('child_process');
 
-
-function makeEmailOption(toEmail, subject, content, html) {
-    return {
-        from: `admin <admin@${emailCredentials.server}>`, // 发件人
-        to: toEmail, // 收件人
-        subject: subject, // 邮件主题
-        text: subject, // 邮件正文（纯文本）
-        html: html // 邮件正文（HTML）
-    };
-}
-
-function sendEmail(emailServer, res, toEmail, subject, content, html) {
-    // 创建一个 SMTP 传输对象
-    const transporter = nodemailer.createTransport({
-        host: emailServer, // SMTP 服务器地址
-        port: 587, // SMTP 端口
-        secure: false, // true 为 465，false 为其他端口
-        auth: {
-            user: emailCredentials.user, // 你的邮箱
-            pass: emailCredentials.passworld // 你的邮箱密码
-        },
-        // no fix here
-        tls: {
-            rejectUnauthorized: false // 忽略自签名证书错误
-        }
-    });
-
-    // 发送邮件
-    transporter.sendMail(makeEmailOption(toEmail, subject, content, html), (error, info) => {
-        if (error) {
-            console.error("send email error:", error.message);
-            res.status(500).end();
+function sendEmail(from, toEmails, subject, content, html) {
+    const data = {
+        from : from,
+        to: toEmails,
+        subject: subject,
+        text: content,
+        html: html
+    }
+    const curlCmd = `
+        curl -X POST 'https://api.resend.com/emails' \
+        -H 'Authorization: Bearer ${emailCredentials.apiKey}' \
+        -H 'Content-Type: application/json' \
+        -d '${JSON.stringify(data)}'
+    `.trim()
+    console.log('try send email by curl', curlCmd)
+    exec(curlCmd, (err, stdout, stderr) => {
+        if (err) {
+            console.error('curl send email error:', from, '=>', toEmails, subject, content, html, err)
+            return
         }
 
-        console.log('Message sent: %s', info.messageId);
-        res.send('OK');
-    });
+        console.log('curl send email with ouput', from, '=>', toEmails, subject, content, html, 'output:', stdout)
+    })
+
 }
 
 module.exports = {
