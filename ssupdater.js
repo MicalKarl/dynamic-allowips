@@ -6,6 +6,7 @@ const { exec } = require('child_process');
 const toChinaTimeString = require('./timeUtil').toChinaTimeString
 const sendEmail = require('./emailUtil').sendEmail
 const emailCredentials = require('./.emailAuth.json')
+const ipmgr = require('./IPPortAllowManager')
 
 const sscfgkey = 'sscfg'
 
@@ -54,6 +55,8 @@ function startUpdate() {
             if (!_.isEqual(cfg, JSON.parse(data))) {
                 serializeSnapSSCfg(cfg)
             }
+
+            updateSSIPPort()
         })
     })
 
@@ -69,6 +72,7 @@ function startUpdate() {
         if (!_.isEqual(getSSCfg(), snapSSCfg)) {
             config.saveConfig()
         }
+        updateSSIPPort()
     }
 
     const intervalMs = subcfg.interval * 3600 * 1000
@@ -166,6 +170,15 @@ function updateSSPort(port) {
     }
 }
 
+function updateSSIPPort() {
+    ipmgr.getOpenPorts().forEach((port) => {
+        const curPort = getCurSSPort()
+        if (curPort != port) {
+            ipmgr.removePort(port)
+        }
+    })
+}
+
 function updateSSPassword(password) {
     let changed = false
     let cfg = getSSCfg()
@@ -192,10 +205,8 @@ function getRandomIntExcluding(min, max, exclude) {
     return randomInt;
 }
 
-const ipmgr = require('./IPPortAllowManager')
 function addIP(ip) {
     ipmgr.addIPPort(ip, getCurSSPort())
-    console.log(`try add ip(${ip}) port(${getCurSSPort()}) at ${toChinaTimeString(new Date())}`)
 }
 
 module.exports = {

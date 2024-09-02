@@ -2,6 +2,7 @@ const IpAllowObject = require("./IpAllowObject")
 const path = require('path')
 const fs = require('fs')
 const { setInterval } = require("timers/promises")
+const { exec } = require("child_process")
 
 
 /**
@@ -28,9 +29,49 @@ class IPPortAllowManager {
         return true
     }
 
+    removePort(port) {
+        if (port <= 1024 || port >= 65536) {
+            return
+        }
+
+        let o = this.Objects.get(port)
+        if (o) {
+            o.clear()
+            this.serializeA(o)
+            this.Objects.delete(port)
+            try {
+                fs.rmSync(getSerializePath(port))
+                const delCmd = `for i in $(ufw status numbered |(grep '] ${port}[[:space:]]'|awk -F"[][]" '{print $2}') | tac); do ufw --force delete $i; done && ufw status`
+                exec(delCmd, (err, stdout, stderr) => {
+                    if(err) {
+                        console.error(`err exec ufw del cmd`, cmd, err)
+                        return
+                    }
+
+                    console.log(`del cmd result`, delCmd, stdout)
+                    if(stderr && stderr.length > 0) {
+                        console.error(`err output of del cmd`, delCmd, stderr)
+                    }
+                })
+            } catch (err) {
+                console.error('immgr rm port file failed', port)
+            }
+        }
+    }
+
+    getOpenPorts() {
+        let ports = [];
+        this.Objects.forEach(o => {
+            ports.push(o.port)
+        })
+        return ports
+    }
+
     refresh() {
         this.Objects.forEach((o) => {
-            o.update(Date.now())
+            if (o.update(Date.now())) {
+                this.serializeA(o)
+            }
         })
     }
 
@@ -42,43 +83,31 @@ class IPPortAllowManager {
 
     serializeA(o) {
         let IpObjPath = getSerializePath(o.port)
-        fs.writeFile(IpObjPath, JSON.stringify(o), 'utf-8', (err) => {
-            if (err) {
-                console.error(`serialize ${o} to ${IpObjPath} failed: ${err}`);
-            }
-        })
+        try {
+            fs.writeFileSync(IpObjPath, JSON.stringify(o), 'utf-8')
+        } catch (err) {
+            console.error(`serialize ${o} to ${IpObjPath} failed: ${err}`);
+        }
     }
 
     init() {
         this.serialize()
         this.Objects.clear()
-        fs.readdir(getIpObjectRootDir(), (err, files) => {
-            if(err) {
-                return console.error(err)
+        let files = fs.readdirSync(getIpObjectRootDir())
+        const regex = /^[0-9]+\-ipobj\.json$/
+        files.forEach((file) => {
+            if (!file.match(regex)) {
+                return
             }
-
-            files.forEach( (file) => {
-                if (!file.match("%d-ipobj.json")) {
-                    return
-                }
-                const IpObjPath = getSerializePath(getIpObjectRootDir(), file)
-                console.log("loading ip allow object:", IpObjPath)
-                fs.readFile(IpObjPath, (err, data) => {
-                    if (err) {
-                        console.error(`err occurs when read file ${IpObjPath}: ${err}`);
-                    }
-
-                    try {
-                        const json = JSON.parse(data);
-                        let o = new IpAllowObject(json.port, json.data)
-                        this.Objects.set(json.port, o);
-                        o.update(Date.now(), true)
-                        console.log("load complete for ip allow object:", IpObjPath)
-                    } catch (err) {
-                        console.error(`err occurs when read file ${IpObjPath}: ${err}`);
-                    }
-                })
-            })
+            const IpObjPath = path.join(getIpObjectRootDir(), file)
+            try {
+                const json = JSON.parse(fs.readFileSync(IpObjPath));
+                let o = new IpAllowObject(json.port, json.data)
+                this.Objects.set(json.port, o);
+                o.update(Date.now(), true)
+            } catch (err) {
+                console.error(`err occurs when loading ${IpObjPath}: ${err}`);
+            }
         })
     }
 
@@ -98,7 +127,7 @@ function getIpObjectRootDir() {
 
 let mgr = new IPPortAllowManager()
 
-setInterval(()=> {
+setInterval(() => {
     mgr.refresh()
 }, 5000)
 

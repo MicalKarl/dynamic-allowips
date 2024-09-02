@@ -18,16 +18,6 @@ function addIp(req) {
     return clientIp;
 }
 
-app.get('/addip', (req, res) => {
-    const clientIp = addIp(req)
-    res.send(`add ip ${clientIp}`);
-});
-
-app.get('/fastaddip', async (req, res) => {
-    addIp(req);
-    res.status(204).end();
-});
-
 app.get('/allips', (req, res) => {
     res.json(ipmgr.getTimeJson());
 });

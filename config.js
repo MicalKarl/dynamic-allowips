@@ -37,7 +37,7 @@ class Config extends EventEmitter {
     get(key) {
         let v = this.config[key]
         if (typeof (v) == 'object') {
-            return _.cloneDeep(v)
+            return _.clone(v)
         }
 
         return v
@@ -62,7 +62,7 @@ class Config extends EventEmitter {
             } else if (oldv == undefined) {
                 console.log('add new key', key, 'with', value, 'to the config!')
             }
-            this.emit("update", key, value)
+            this.emit("update", key, value, oldv)
         }
     }
 
@@ -85,4 +85,7 @@ function getConfigPath() {
     return path.join(__dirname, 'config.json');
 }
 
-module.exports = new Config();
+let cfg = new Config();
+cfg.setMaxListeners(100)
+
+module.exports = cfg
