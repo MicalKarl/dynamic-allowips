@@ -84,7 +84,12 @@ function startUpdate() {
         }
 
         config.set(keyRefreshTime, now)
-        updateSSPort(getRandomIntExcluding(getSSMinPort(), getSSMaxPort(), getCurSSPort()))
+
+        if ((new Date()).getHours() < 12) {
+            updateSSPort(getRandomIntExcluding(getSSMinPort(), getSSMaxPort(), getCurSSPort()))
+            return
+        }
+
         exec(subcfg.ssBlake3Cmd, (error, stdout, stderr) => {
             if (error) {
                 console.error(`Error executing command: ${error.message}`);

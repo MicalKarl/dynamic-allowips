@@ -41,7 +41,7 @@ class IPPortAllowManager {
             this.Objects.delete(port)
             try {
                 fs.rmSync(getSerializePath(port))
-                const delCmd = `for i in $(ufw status numbered |(grep '] ${port}[[:space:]]'|awk -F"[][]" '{print $2}') | tac); do ufw --force delete $i; done && ufw status`
+                const delCmd = `for i in $(ufw status numbered |(grep '] ${port}[[:space:]]'|awk -F"[][]" '{print $2}') | tac); do ufw --force delete $i; done; ufw reload`
                 exec(delCmd, (err, stdout, stderr) => {
                     if(err) {
                         console.error(`err exec ufw del cmd`, cmd, err)
